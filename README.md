@@ -3,7 +3,8 @@ Steps: 1:
 	run extract_data.py file
 2: 
 	change in extract_audio_data.py
-	change line 25 to the extracted data folder 	audio_files = glob.glob(f'/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/{audio_file}')
+	change line 25 to the extracted data folder 	
+ 	audio_files = glob.glob(f'/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/{audio_file}')
 	Change till the extracted folder using copy path leave /202*/*/{audio_file}
 	change line 58 as well
 	run extract_audio_data.py 3:
