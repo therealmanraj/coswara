@@ -47,7 +47,7 @@ def flatten_features(features):
 
 # Collect audio file paths
 audio_files = {
-    'cough_heavy': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/cough-heavy.wav'),
+    'cough_heavy': glob.glob('/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/cough-heavy.wav'),
     # 'cough_shallow': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/cough-shallow.wav'),
     # 'counting_fast': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/counting-fast.wav'),
     # 'counting_normal': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/counting-normal.wav'),
@@ -60,7 +60,7 @@ audio_files = {
 
 # Extract unique identifiers
 identifiers = {key: [os.path.basename(os.path.dirname(file)) for file in files] for key, files in audio_files.items()}
-
+print(identifiers)
 # Process and extract features for each category
 feature_dfs = {}
 for category, files in audio_files.items():
@@ -76,7 +76,7 @@ for category, files in audio_files.items():
 # Save the DataFrames to CSV files and visualize features
 for category, df in feature_dfs.items():
     df.set_index('identifier', inplace=True)
-    df.to_csv(f'{category}_features.csv')
+    df.to_csv(f'/Users/manraj/Documents/GitHub/coswara/Extracted Librosa Features/{category}_features.csv')
     print(f"{category.capitalize()} Features DataFrame:")
     print(df.head())
 
@@ -128,36 +128,10 @@ def plot_mfcc(y, sr, title='MFCC'):
     plt.show()
 
 # Example of plotting for a sample file
-file_path = '/Users/manraj/Desktop/Coswara-Data/Extracted_data/20200413/0Rlzhiz6bybk77wdLjxwy7yLDhg1/breathing-deep.wav' # Change to actual file path
+file_path = '/Users/manraj/Documents/GitHub/coswara/Extracted_data/20200413/0Rlzhiz6bybk77wdLjxwy7yLDhg1/breathing-deep.wav' # Change to actual file path
 y, sr = preprocess_audio(file_path)
 if y is not None and sr is not None:
     plot_waveform(y, sr, title='Waveform for Sample File')
     plot_spectrogram(y, sr, title='Spectrogram for Sample File')
     plot_mel_spectrogram(y, sr, title='Mel-Spectrogram for Sample File')
     plot_mfcc(y, sr, title='MFCC for Sample File')
-
-# # Iterate through each category and its corresponding DataFrame
-# for category, df in feature_dfs.items():
-#     print(f"Visualizations for {category.capitalize()}:")
-#     for identifier, row in df.iterrows():
-#         file_paths = glob.glob(f'/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/{identifier}/{category}.wav')
-#         for file_path in file_paths:
-#             y, sr = preprocess_audio(file_path)
-#             if y is not None and sr is not None:
-#                 print(f"Identifier: {identifier}")
-#                 plt.figure(figsize=(14, 12))
-                
-#                 plt.subplot(2, 2, 1)
-#                 plot_waveform(y, sr, title=f'Waveform for {identifier}')
-                
-#                 plt.subplot(2, 2, 2)
-#                 plot_spectrogram(y, sr, title=f'Spectrogram for {identifier}')
-                
-#                 plt.subplot(2, 2, 3)
-#                 plot_mel_spectrogram(y, sr, title=f'Mel-Spectrogram for {identifier}')
-                
-#                 plt.subplot(2, 2, 4)
-#                 plot_mfcc(y, sr, title=f'MFCC for {identifier}')
-                
-#                 plt.tight_layout()
-#                 plt.show()
