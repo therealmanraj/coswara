@@ -6,6 +6,7 @@ import librosa.display
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+from scipy.io import wavfile
 
 # Function to load and preprocess audio files
 def preprocess_audio(file_path):
@@ -45,22 +46,63 @@ def flatten_features(features):
             flattened[key] = values
     return flattened
 
+# Function to plot waveform and save it
+def plot_and_save_waveform(y, sr, category, identifier, output_dir):
+    plt.figure(figsize=(14, 5))
+    librosa.display.waveshow(y, sr=sr)
+    plt.title('Waveform')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Amplitude')
+    plt.savefig(os.path.join(output_dir, f'{category}-{identifier}-waveform.png'))
+    plt.close()
+
+# Function to plot spectrogram and save it
+def plot_and_save_spectrogram(y, sr, category, identifier, output_dir):
+    D = np.abs(librosa.stft(y))
+    plt.figure(figsize=(14, 5))
+    librosa.display.specshow(librosa.amplitude_to_db(D, ref=np.max), sr=sr, x_axis='time', y_axis='log')
+    plt.colorbar(format='%+2.0f dB')
+    plt.title('Spectrogram')
+    plt.savefig(os.path.join(output_dir, f'{category}-{identifier}-spectrogram.png'))
+    plt.close()
+
+# Function to plot mel-spectrogram and save it
+def plot_and_save_mel_spectrogram(y, sr, category, identifier, output_dir):
+    S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
+    S_DB = librosa.amplitude_to_db(S, ref=np.max)
+    plt.figure(figsize=(14, 5))
+    librosa.display.specshow(S_DB, sr=sr, x_axis='time', y_axis='mel')
+    plt.colorbar(format='%+2.0f dB')
+    plt.title('Mel-Spectrogram')
+    plt.savefig(os.path.join(output_dir, f'{category}-{identifier}-mel_spectrogram.png'))
+    plt.close()
+
+# Function to plot MFCC and save it
+def plot_and_save_mfcc(y, sr, category, identifier, output_dir):
+    mfccs = librosa.feature.mfcc(y, sr=sr, n_mfcc=13)
+    plt.figure(figsize=(14, 5))
+    librosa.display.specshow(mfccs, sr=sr, x_axis='time')
+    plt.colorbar()
+    plt.title('MFCC')
+    plt.savefig(os.path.join(output_dir, f'{category}-{identifier}-mfcc.png'))
+    plt.close()
+
 # Collect audio file paths
 audio_files = {
     'cough_heavy': glob.glob('/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/cough-heavy.wav'),
-    # 'cough_shallow': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/cough-shallow.wav'),
-    # 'counting_fast': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/counting-fast.wav'),
-    # 'counting_normal': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/counting-normal.wav'),
-    # 'breathing_deep': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/breathing-deep.wav'),
-    # 'breathing_shallow': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/breathing-shallow.wav'),
-    # 'vowel_a': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/vowel-a.wav'),
-    # 'vowel_e': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/vowel-e.wav'),
-    # 'vowel_o': glob.glob('/Users/manraj/Desktop/Coswara-Data/Extracted_data/202*/*/vowel-o.wav')
+    'cough_shallow': glob.glob('/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/cough-shallow.wav'),
+    'counting_fast': glob.glob('/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/counting-fast.wav'),
+    'counting_normal': glob.glob('/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/counting-normal.wav'),
+    'breathing_deep': glob.glob('/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/breathing-deep.wav'),
+    'breathing_shallow': glob.glob('/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/breathing-shallow.wav'),
+    'vowel_a': glob.glob('/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/vowel-a.wav'),
+    'vowel_e': glob.glob('/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/vowel-e.wav'),
+    'vowel_o': glob.glob('/Users/manraj/Documents/GitHub/coswara/Extracted_data/202*/*/vowel-o.wav')
 }
 
 # Extract unique identifiers
 identifiers = {key: [os.path.basename(os.path.dirname(file)) for file in files] for key, files in audio_files.items()}
-print(identifiers)
+
 # Process and extract features for each category
 feature_dfs = {}
 for category, files in audio_files.items():
@@ -69,69 +111,30 @@ for category, files in audio_files.items():
         y, sr = preprocess_audio(file)
         if y is not None and sr is not None:
             features = extract_features(y, sr)
-            features['identifier'] = os.path.basename(os.path.dirname(file))
+            identifier = os.path.basename(os.path.dirname(file))
+            features['identifier'] = identifier
             features_list.append(flatten_features(features))
+
+            # Directory to save plots
+            output_dir = os.path.dirname(file)
+            print(output_dir)
+            
+            # Create the directory if it does not exist
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            
+            # Plot and save each type of plot
+            plot_and_save_waveform(y, sr, category, identifier, output_dir)
+            plot_and_save_spectrogram(y, sr, category, identifier, output_dir)
+            plot_and_save_mel_spectrogram(y, sr, category, identifier, output_dir)
+            # plot_and_save_mfcc(y, sr, category, identifier, output_dir)
+    
     feature_dfs[category] = pd.DataFrame(features_list)
 
-# Save the DataFrames to CSV files and visualize features
+# Save the DataFrames to CSV files
 for category, df in feature_dfs.items():
     df.set_index('identifier', inplace=True)
-    df.to_csv(f'/Users/manraj/Documents/GitHub/coswara/Extracted Librosa Features/{category}_features.csv')
-    print(f"{category.capitalize()} Features DataFrame:")
-    print(df.head())
-
-# Example of visualizing the MFCCs for one category
-df = feature_dfs['cough_heavy']
-plt.figure(figsize=(14, 8))
-sns.boxplot(data=df.filter(like='mfcc'))
-plt.title('MFCCs for Cough Heavy')
-plt.xlabel('MFCC Coefficients')
-plt.ylabel('Values')
-plt.show()
-
-# Function to plot waveform
-def plot_waveform(y, sr, title='Waveform'):
-    plt.figure(figsize=(14, 5))
-    librosa.display.waveshow(y, sr=sr)
-    plt.title(title)
-    plt.xlabel('Time (s)')
-    plt.ylabel('Amplitude')
-    plt.show()
-
-# Function to plot spectrogram
-def plot_spectrogram(y, sr, title='Spectrogram'):
-    D = np.abs(librosa.stft(y))
-    plt.figure(figsize=(14, 5))
-    librosa.display.specshow(librosa.amplitude_to_db(D, ref=np.max), sr=sr, x_axis='time', y_axis='log')
-    plt.colorbar(format='%+2.0f dB')
-    plt.title(title)
-    plt.show()
-
-# Function to plot mel-spectrogram
-def plot_mel_spectrogram(y, sr, title='Mel-Spectrogram'):
-    S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
-    S_DB = librosa.amplitude_to_db(S, ref=np.max)
-    plt.figure(figsize=(14, 5))
-    librosa.display.specshow(S_DB, sr=sr, x_axis='time', y_axis='mel')
-    plt.colorbar(format='%+2.0f dB')
-    plt.title(title)
-    plt.show()
-
-# Function to plot MFCC
-def plot_mfcc(y, sr, title='MFCC'):
-    mfccs = librosa.feature.mfcc(y, sr=sr, n_mfcc=13)
-    plt.figure(figsize=(14, 5))
-    librosa.display.specshow(mfccs, sr=sr, x_axis='time')
-    plt.colorbar()
-    plt.title(title)
-    plt.tight_layout()
-    plt.show()
-
-# Example of plotting for a sample file
-file_path = '/Users/manraj/Documents/GitHub/coswara/Extracted_data/20200413/0Rlzhiz6bybk77wdLjxwy7yLDhg1/breathing-deep.wav' # Change to actual file path
-y, sr = preprocess_audio(file_path)
-if y is not None and sr is not None:
-    plot_waveform(y, sr, title='Waveform for Sample File')
-    plot_spectrogram(y, sr, title='Spectrogram for Sample File')
-    plot_mel_spectrogram(y, sr, title='Mel-Spectrogram for Sample File')
-    plot_mfcc(y, sr, title='MFCC for Sample File')
+    output_dir = '/Users/manraj/Documents/GitHub/coswara/Extracted Librosa Features'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    df.to_csv(os.path.join(output_dir, f'{category}_features.csv'))
