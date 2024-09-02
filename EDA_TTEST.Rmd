@@ -1,0 +1,185 @@
+---
+title: "Untitled"
+author: "Javier Merino"
+date: "2024-08-03"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(tidyr)
+library(psych)
+```
+
+
+```{r}
+df = read.csv("/Users/javiermerino/Documents/Langara/1.DANA4800/Assignment_TeamWork/NewData with audio duration.csv")
+```
+
+```{r}
+symptoms = df %>% select(Health.status..e.g....positive_mild..healthy.etc..,
+                         Cough..True.False.,
+                         Cold...True.False.,
+                         Diarrheoa..True.False.,
+                         Breathing.Difficulties..True.False.,
+                         Sore.Throat..True.False.,
+                         Fever..True.False.,
+                         Fatigue..True.False.,
+                         Muscle.Pain..True.False.,
+                         Loss.of.Smell...Taste..True.False.)
+  
+
+symptoms = symptoms %>% filter(Health.status..e.g....positive_mild..healthy.etc..== "Positive")
+symptoms = symptoms %>% select(-Health.status..e.g....positive_mild..healthy.etc..)
+symptoms_long <- pivot_longer(symptoms, cols = everything(), names_to = "Symptoms", values_to = "Value")
+counts <- symptoms_long %>%
+  group_by(Symptoms, Value) %>%
+  summarise(Count = n(), .groups = 'drop')
+
+
+ggplot(counts, aes(x = Symptoms, y = Count, fill = Value)) +
+  geom_bar(stat = "identity", position = "stack") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+ # Rotate labels+ # Rotate labels) +
+  labs(title = "Symptoms related to Covid present on 'Covid Postive' status Subjects",
+       x = "Symptoms",
+       y = "Count") +
+  scale_fill_manual(values = c("TRUE" = "blue", "FALSE" = "red"))
+
+```
+
+```{r}
+symptoms = df %>% select(Health.status..e.g....positive_mild..healthy.etc..,
+                         Cough..True.False.,
+                         Cold...True.False.,
+                         Diarrheoa..True.False.,
+                         Breathing.Difficulties..True.False.,
+                         Sore.Throat..True.False.,
+                         Fever..True.False.,
+                         Fatigue..True.False.,
+                         Muscle.Pain..True.False.,
+                         Loss.of.Smell...Taste..True.False.)
+  
+
+symptoms = symptoms %>% filter(Health.status..e.g....positive_mild..healthy.etc..== "Negative")
+symptoms = symptoms %>% select(-Health.status..e.g....positive_mild..healthy.etc..)
+symptoms_long <- pivot_longer(symptoms, cols = everything(), names_to = "Symptoms", values_to = "Value")
+counts <- symptoms_long %>%
+  group_by(Symptoms, Value) %>%
+  summarise(Count = n(), .groups = 'drop')
+
+
+ggplot(counts, aes(x = Symptoms, y = Count, fill = Value)) +
+  geom_bar(stat = "identity", position = "stack") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+ # Rotate labels+ # Rotate labels) +
+  labs(title = "Symptoms related to Covid present on 'Covid Negative' status Subjects",
+       x = "Symptoms",
+       y = "Count") +
+  scale_fill_manual(values = c("TRUE" = "blue", "FALSE" = "red"))
+
+```
+
+
+```{r}
+duration = df %>% select(contains("duration"),
+                         Gender..male.female.other.,
+                         Age..number.,
+                         Health.status..e.g....positive_mild..healthy.etc..,
+                         -duration_cough_heavy)
+
+na_value = colSums(is.na(duration))
+na_value
+
+describe(duration)
+
+duration = duration %>% rename(duration_cough_heavy = duration_cough_heavy_cough_heavy)
+
+#duration = duration %>% mutate(duration_cough_heavy = replace_na(monthly_budget,2623.22))
+
+```
+```{r}
+duration_long <- pivot_longer(duration, cols = c(duration_cough_heavy:duration_vowel_o ), names_to = "Audio", values_to = "Duration")
+duration_long_c = duration_long %>% filter(!is.na(Duration)) %>%
+  filter(Duration<100) #%>% filter(Gender..male.female.other.!= "Other")
+na_value = colSums(is.na(duration_long_c))
+na_value
+
+ggplot(duration_long_c,
+       aes(x = Audio, y = Duration))+
+    
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  geom_jitter(height = 0.1, width = 0.2, alpha=0.06, color = "blue" )+
+  geom_boxplot(alpha = 0.7)
+
+```
+
+```{r}
+df2 = read.csv("/Users/javiermerino/Documents/Langara/1.DANA4800/Assignment_TeamWork/Deliver/librosa_features.csv")
+```
+
+```{r}
+
+df2 = df2 %>% mutate(AgeGroup = cut(Age..number., breaks = c(0, 18,40,60,80,100),labels=c("-18","18-40","40-60","60-80","80+")))
+
+data = df2 %>% group_by(Gender..male.female.other.,
+                        AgeGroup,
+                        Health.status..e.g....positive_mild..healthy.etc..) %>%
+  summarise(Count = n())
+data
+
+group1 = df2 %>% filter(Gender..male.female.other.== "Male") %>%
+                        filter(AgeGroup == "18-40") %>%
+                          filter(Health.status..e.g....positive_mild..healthy.etc.. == "Positive")
+
+group2 = df2 %>% filter(Gender..male.female.other.== "Male") %>%
+                        filter(AgeGroup == "18-40") %>%
+                          filter(Health.status..e.g....positive_mild..healthy.etc.. == "Negative")
+
+group3 = df2 %>% filter(Gender..male.female.other.== "Female") %>%
+                        filter(AgeGroup == "18-40") %>%
+                          filter(Health.status..e.g....positive_mild..healthy.etc.. == "Positive")
+
+group4 = df2 %>% filter(Gender..male.female.other.== "Female") %>%
+                        filter(AgeGroup == "18-40") %>%
+                          filter(Health.status..e.g....positive_mild..healthy.etc.. == "Negative")
+```
+
+```{r}
+par(mfrow=c(1,2))
+
+hist(group1$rms_cough_heavy, breaks = seq(from=0.0, to=0.4,by = 0.0125),main = "RMS_Cough_Heavy G1", xlab="G1 = Male, 18-40, Covid Positive")
+
+hist(group2$rms_cough_heavy, breaks = seq(from=0.0, to=0.4,by = 0.0125),main = "RMS_Cough_Heavy G2", xlab="G2 = Male, 18-40, Covid Negative")
+
+shapiro.test(group1$rms_cough_heavy)
+
+shapiro.test(group2$rms_cough_heavy)
+
+wilcox.test(group1$rms_cough_heavy, group2$rms_cough_heavy, paired = FALSE)
+
+wilcox.test(group2$rms_cough_heavy, group1$rms_cough_heavy,  paired = FALSE)
+
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+
+hist(group3$rms_cough_heavy, breaks = seq(from=0.0, to=0.3,by = 0.0125),main = "RMS_Cough_Heavy G3", xlab="G3 = Female, 18-40, Covid Positive")
+
+hist(group4$rms_cough_heavy, breaks = seq(from=0.0, to=0.4,by = 0.0125),main = "RMS_Cough_Heavy G4", xlab="G4 = Female, 18-40, Covid Negative")
+
+shapiro.test(group3$rms_cough_heavy)
+
+shapiro.test(group4$rms_cough_heavy)
+
+wilcox.test(group3$rms_cough_heavy, group4$rms_cough_heavy, paired = FALSE)
+
+wilcox.test(group4$rms_cough_heavy, group3$rms_cough_heavy,  paired = FALSE)
+
+
+```
+
+
+
+
+
